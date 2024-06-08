@@ -85,39 +85,49 @@ int getBoardState()
 }
 
 //board_val will be similar to FEN format used in chess
-int set_board(char* board_val) {
-    int row = 0;
-    for(int i = 0;i < 11;i++) 
-    {
-        if(board_val[i] == "/") 
-        {
-            int j;
-            for(j = row;j < i;j++)
-            {
+// int set_board(char* board_val) {
+//     int row = 0;
+//     for(int i = 0;i < 11;i++) 
+//     {
+//         if(board_val[i] == "/") 
+//         {
+//             int j;
+//             for(j = row;j < i;j++)
+//             {
                 
-            }
-        }
-    }
-}
+//             }
+//         }
+//     }
+// }
 
-void printBoard()
+void printBoard(FILE* fp)
 {
+    
     for (int i = 0;i < 3;i++)
     {
         for (int j = 0;j < 3;j++)
         {
-            printf("%d ", board[i][j]);
+            if(fp != NULL)
+                fprintf(fp, "%d ", board[i][j]);
+            else printf("%d ", board[i][j]);
         }
-        printf("\n");
+        if(fp != NULL) fprintf(fp, "\n");
+        else printf("\n");
     }
 }
 
+int computer_move_i;
+int computer_move_j;
 
 int mini_max(int player)
 {
 
     int boardState = getBoardState();
-
+    // if(boardState == PLAYER_O_WINING || boardState == PLAYER_X_WINING || boardState == MATCH_DRAW) {
+    //         FILE* fp = fopen("result.txt", "a");
+    //         printBoard(fp);
+    //         fclose(fp);
+    // }
     if (boardState == PLAYER_X_WINING) return -10;
     if (boardState == PLAYER_O_WINING) return 10;
     if (boardState == MATCH_DRAW) return 5;
@@ -129,26 +139,46 @@ int mini_max(int player)
     {
         for (int j = 0;j < 3;j++)
         {
+            if(board[i][j] != 0) continue;
             if (player == X) {
                 board[i][j] = X;
-                score = min(mini_max(O), score);
+                int cur_score = mini_max(O);
+                if(cur_score < score) {
+                    score = cur_score;
+                    computer_move_i = i;
+                    computer_move_j = j;
+                }
+                
                 board[i][j] = 0;
             }
             else {
                 board[i][j] = O;
-                score = max(mini_max(X), score);
+                int cur_score = mini_max(X);
+                if(cur_score > score) {
+                    score = cur_score;
+                    computer_move_i = i;
+                    computer_move_j = j;
+                }
                 board[i][j] = 0;
             }
-            printBoard();
-            printf("%d\n", score);
         }
     }
 
     return score;
 }
 
-// int main()
-// {
-//     mini_max(X);
-//     printf("\nExecution finished\n");
-// }
+int main()
+{
+    
+    while(!is_all_square_filled()) {
+        int choice;
+        printBoard(NULL);
+        printf("Enter your square: ");
+        scanf("%d", &choice);
+        board[choice / 3][choice % 3] = 1;
+        mini_max(O);
+        board[computer_move_i][computer_move_j] = 2;
+    }
+    
+    printf("\nExecution finished\n");
+}
